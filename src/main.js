@@ -4,7 +4,7 @@ import { GLTFLoader } from "https://threejsfundamentals.org/threejs/resources/th
 import { DRACOLoader } from "https://threejsfundamentals.org/threejs/resources/threejs/r125/examples/jsm/loaders/DRACOLoader.js";
 
 const scene = new THREE.Scene();
-// scene.background = new THREE.Color(0xff0000);
+scene.background = new THREE.Color(0xff0000);
 const camera = new THREE.PerspectiveCamera(
   90,
   window.innerWidth / window.innerHeight,
@@ -109,6 +109,7 @@ const [cubeData] = await Promise.all([
 ]);
 // extracting mesh
 let cube = cubeData.scene.children[2];
+console.log(cube);
 
 scene.add(cube);
 
@@ -198,13 +199,49 @@ cube.move = () => {
   }
 };
 
-const animate = () => {
+const generateStar = async (scene) => {
+  let [star] = await Promise.all([loader.loadAsync("src/assets/testcube.glb")]);
+  star = star.scene.children[2];
+  star.scale.set(0.1, 0.1, 0.1);
+  scene.add(star);
+  // console.log(star.scene.children[2]);
+  return star;
+};
+
+let stars = [];
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.update();
+
+function detectCollisionCubes(object1, object2) {
+  object1.geometry.computeBoundingBox(); //not needed if its already calculated
+  object2.geometry.computeBoundingBox();
+  object1.updateMatrixWorld();
+  object2.updateMatrixWorld();
+
+  var box1 = object1.geometry.boundingBox.clone();
+  box1.applyMatrix4(object1.matrixWorld);
+
+  var box2 = object2.geometry.boundingBox.clone();
+  box2.applyMatrix4(object2.matrixWorld);
+
+  return box1.intersectsBox(box2);
+}
+
+const animate = async () => {
   requestAnimationFrame(animate);
+  if (stars.length < 1) {
+    let star = await generateStar(scene);
+    stars = [...stars, star];
+    // stars = [...stars, await generateStar(scene)];
+  }
   // cube.rotation.x += 0.01;
   // cube.rotation.y += 0.01;
   cube.move();
   renderer.render(scene, camera);
+  if (stars.length > 0) console.log(detectCollisionCubes(cube, stars[0]));
   // console.log(cube.rotation);
+  controls.update();
 };
 
 animate();
