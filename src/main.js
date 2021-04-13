@@ -3,6 +3,8 @@ import { OrbitControls } from "https://threejsfundamentals.org/threejs/resources
 import { GLTFLoader } from "https://threejsfundamentals.org/threejs/resources/threejs/r125/examples/jsm/loaders/GLTFLoader.js";
 import { DRACOLoader } from "https://threejsfundamentals.org/threejs/resources/threejs/r125/examples/jsm/loaders/DRACOLoader.js";
 
+import { getRandomInt } from "./utils.js";
+
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xff0000);
 const camera = new THREE.PerspectiveCamera(
@@ -199,11 +201,20 @@ cube.move = () => {
   }
 };
 
+const starMove = (star) => {
+  let step = 0.02;
+  star.position.y -= step;
+};
+
 const generateStar = async (scene) => {
   let [star] = await Promise.all([loader.loadAsync("src/assets/testcube.glb")]);
   star = star.scene.children[2];
+
+  star.position.set(getRandomInt(-4, 4), 4, 0);
   star.scale.set(0.1, 0.1, 0.1);
+  star.move = starMove;
   scene.add(star);
+
   // console.log(star.scene.children[2]);
   return star;
 };
@@ -234,6 +245,15 @@ const animate = async () => {
     let star = await generateStar(scene);
     stars = [...stars, star];
     // stars = [...stars, await generateStar(scene)];
+  } else {
+    stars = stars.filter((star) => {
+      star.move(star);
+      if (detectCollisionCubes(cube, star)) {
+        scene.remove(star);
+        return false;
+      }
+      return true;
+    });
   }
   // cube.rotation.x += 0.01;
   // cube.rotation.y += 0.01;
