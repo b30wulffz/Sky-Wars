@@ -291,10 +291,14 @@ const animate = async () => {
   } else {
     stars = stars.filter((star) => {
       star.move(star);
-      // if (detectCollisionGroupObject(cube, star)) {
-      //   scene.remove(star);
-      //   return false;
-      // }
+      if (detectCollisionGroupObject(cube, star)) {
+        scene.remove(star);
+        return false;
+      }
+      if (cube.position.z - star.position.z < -5) {
+        star.position.set(getRandomInt(-4, 4), 4, -100);
+      }
+      // console.log(cube.position.z - star.position.z );
       return true;
     });
   }
