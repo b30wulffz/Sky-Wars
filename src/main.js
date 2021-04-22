@@ -6,13 +6,16 @@ import { DRACOLoader } from "https://threejsfundamentals.org/threejs/resources/t
 import { getRandomInt } from "./utils.js";
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xff0000);
+// scene.background = new THREE.Color(0xff0000);
 const camera = new THREE.PerspectiveCamera(
   90,
   window.innerWidth / window.innerHeight,
   0.1,
   1000
 );
+
+// const axesHelper = new THREE.AxesHelper(5);
+// scene.add(axesHelper);
 
 // const camera = new THREE.PerspectiveCamera(
 //   45,
@@ -36,7 +39,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 const color = 0xffffff;
-const intensity = 3;
+const intensity = 1;
 const light = new THREE.AmbientLight(color, intensity);
 scene.add(light);
 
@@ -107,15 +110,29 @@ loader.setDRACOLoader(dracoLoader);
 // );
 
 const [cubeData] = await Promise.all([
-  loader.loadAsync("src/assets/testcube.glb"),
+  // loader.loadAsync("src/assets/testcube.glb"),
+  loader.loadAsync("src/assets/dorand2.glb"),
 ]);
+console.log(cubeData.scene.children);
 // extracting mesh
 let cube = cubeData.scene.children[2];
 console.log(cube);
+cube.scale.set(0.5, 0.5, 1);
+console.log(cube.rotation);
+cube.rotation.z = -Math.PI / 2;
+cube.rotation.y = 0;
+cube.initialRotation = new THREE.Vector3(
+  cube.rotation.x,
+  cube.rotation.y,
+  cube.rotation.z
+);
 
 scene.add(cube);
 
-camera.position.z = 5;
+// cameraControls = new THREE.OrbitAndPanControls(camera, renderer.domElement);
+// cameraControls.target.set(0, 50, 0);
+
+camera.position.z = 10;
 
 // movement - please calibrate these values
 var xSpeed = 0.5;
@@ -163,6 +180,28 @@ const onKeyDown = (event) => {
 document.addEventListener("keydown", onKeyDown);
 
 cube.move = () => {
+  if (!cube.isMoveX) {
+    // console.log(cube.rotation);
+    let step = 0.01;
+    if (Math.abs(cube.rotation.y - cube.initialRotation.y) > step) {
+      if (cube.rotation.y < cube.initialRotation.y) {
+        cube.rotation.y += step;
+      } else {
+        cube.rotation.y -= step;
+      }
+    }
+  }
+  if (!cube.isMoveY) {
+    let step = 0.01;
+
+    if (Math.abs(cube.rotation.x - cube.initialRotation.x) > step) {
+      if (cube.rotation.x < cube.initialRotation.x) {
+        cube.rotation.x += step;
+      } else {
+        cube.rotation.x -= step;
+      }
+    }
+  }
   if (cube.isMoveX || cube.isMoveY) {
     let step = 0.1;
     let flag = 0;
@@ -183,36 +222,28 @@ cube.move = () => {
     } else {
       if (cube.position.y < cube.newPosition.y) {
         cube.position.y += step;
+        cube.rotation.x += 0.01;
       } else if (cube.position.y > cube.newPosition.y) {
         cube.position.y -= step;
-      }
-    }
-  }
-  if (!cube.isMoveX) {
-    // console.log(cube.rotation);
-    let step = 0.005;
-    if (Math.abs(cube.rotation.y) > step) {
-      if (cube.rotation.y < 0) {
-        cube.rotation.y += step;
-      } else {
-        cube.rotation.y -= step;
+        cube.rotation.x -= 0.01;
       }
     }
   }
 };
 
 const starMove = (star) => {
-  let step = 0.02;
-  star.position.y -= step;
+  let step = 0.5;
+  star.position.z += step;
 };
 
 const generateStar = async (scene) => {
-  let [star] = await Promise.all([loader.loadAsync("src/assets/testcube.glb")]);
+  let [star] = await Promise.all([loader.loadAsync("src/assets/star2.glb")]);
   star = star.scene.children[2];
 
-  star.position.set(getRandomInt(-4, 4), 4, 0);
-  star.scale.set(0.1, 0.1, 0.1);
+  star.position.set(getRandomInt(-4, 4), 4, -100);
+  // star.scale.set(0.1, 0.1, 0.1);
   star.move = starMove;
+  star.rotation.x = Math.PI / 2;
   scene.add(star);
 
   // console.log(star.scene.children[2]);
@@ -223,8 +254,14 @@ let stars = [];
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.update();
+camera.position.set(cube.position.x, cube.position.y, camera.position.z);
+// controls.target.set(cube.position.x, cube.position.y, cube.position.z);
+controls.target = cube.position;
 
-function detectCollisionCubes(object1, object2) {
+function detectCollision(object1, object2) {
+  // console.log("Inside ");
+  // console.log(object1.geometry);
+  // console.log(object2.geometry);
   object1.geometry.computeBoundingBox(); //not needed if its already calculated
   object2.geometry.computeBoundingBox();
   object1.updateMatrixWorld();
@@ -239,6 +276,12 @@ function detectCollisionCubes(object1, object2) {
   return box1.intersectsBox(box2);
 }
 
+function detectCollisionGroupObject(group, object) {
+  return group.children.some((component) => detectCollision(component, object));
+}
+
+// detectCollisionGroupObject(cube, cube);
+
 const animate = async () => {
   requestAnimationFrame(animate);
   if (stars.length < 1) {
@@ -248,18 +291,26 @@ const animate = async () => {
   } else {
     stars = stars.filter((star) => {
       star.move(star);
-      if (detectCollisionCubes(cube, star)) {
-        scene.remove(star);
-        return false;
-      }
+      // if (detectCollisionGroupObject(cube, star)) {
+      //   scene.remove(star);
+      //   return false;
+      // }
       return true;
     });
   }
+  // console.log(stars);
   // cube.rotation.x += 0.01;
   // cube.rotation.y += 0.01;
   cube.move();
+  // camera.position.set(cube.position.x, cube.position.y, camera.position.z);
+  // camera.position.set(cube.position.x, cube.position.y, camera.position.z);
+  camera.position.x = cube.position.x;
+  camera.position.y = cube.position.y;
+  // controls.target.x = cube.position.x;
+  // controls.target.y = cube.position.y;
+  // camera.rotation.set(cube.rotation);
   renderer.render(scene, camera);
-  if (stars.length > 0) console.log(detectCollisionCubes(cube, stars[0]));
+  // if (stars.length > 0) console.log(detectCollisionCubes(cube, stars[0]));
   // console.log(cube.rotation);
   controls.update();
 };
