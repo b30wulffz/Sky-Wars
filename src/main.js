@@ -230,7 +230,7 @@ const generatePowerball = async () => {
 };
 
 const powerballHandler = () => {
-  console.log(player.powerballs);
+  // console.log(player.powerballs);
   player.powerballs = player.powerballs.filter((ball) => {
     // check for collision
 
@@ -248,7 +248,6 @@ const powerballHandler = () => {
 
 const generateStar = async () => {
   const star = await importModel("src/assets/star2.glb");
-  console.log(star);
   star.rotation.x = Math.PI / 2;
 
   star.move = () => {
@@ -263,7 +262,6 @@ const generateStar = async () => {
 const gameObjectsSetup = async () => {
   for (let i = 0; i < getRandomInt(20, 25); i++) {
     const star = await generateStar();
-    console.log(star);
     star.position.set(
       getRandomInt(-20, 20),
       getRandomInt(-10, 10),
@@ -273,12 +271,48 @@ const gameObjectsSetup = async () => {
   }
 };
 
+const detectCollision = (object1, object2) => {
+  object1.geometry.computeBoundingBox();
+  object2.geometry.computeBoundingBox();
+  object1.updateMatrixWorld();
+  object2.updateMatrixWorld();
+
+  var box1 = object1.geometry.boundingBox.clone();
+  box1.applyMatrix4(object1.matrixWorld);
+
+  var box2 = object2.geometry.boundingBox.clone();
+  box2.applyMatrix4(object2.matrixWorld);
+
+  return box1.intersectsBox(box2);
+};
+
+function detectCollisionGroup(group1, group2) {
+  for (let i = 0; i < group1.children.length; i++) {
+    const child1 = group1.children[i];
+    if (child1.type === "Mesh") {
+      for (let j = 0; j < group2.children.length; j++) {
+        const child2 = group2.children[j];
+        if (child2.type === "Mesh") {
+          if (detectCollision(child1, child2)) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+}
 const gameObjectsHandler = () => {
   // check for object collision and reposition
-
   // move object
   gameObjects.forEach((gameObject) => {
-    if (player.position.z - gameObject.position.z < -10) {
+    if (detectCollisionGroup(player, gameObject)) {
+      gameObject.position.set(
+        getRandomInt(-20, 20),
+        getRandomInt(-10, 10),
+        getRandomInt(-1000, -50)
+      );
+    } else if (player.position.z - gameObject.position.z < -10) {
       gameObject.position.set(
         getRandomInt(-20, 20),
         getRandomInt(-10, 10),
