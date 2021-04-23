@@ -14,6 +14,7 @@ let loader;
 let player;
 let controls;
 let galaxy;
+let gameObjects = [];
 
 const init = () => {
   scene = new THREE.Scene();
@@ -56,10 +57,10 @@ const onKeyDown = async (event) => {
   let keyCode = event.code;
 
   switch (keyCode) {
-    case "KeyW":
+    case "KeyS":
       player.moveDirection.y = 1;
       break;
-    case "KeyS":
+    case "KeyW":
       player.moveDirection.y = -1;
       break;
     case "KeyD":
@@ -79,10 +80,10 @@ const onKeyDown = async (event) => {
 const onKeyUp = (event) => {
   let keyCode = event.code;
   switch (keyCode) {
-    case "KeyW":
+    case "KeyS":
       player.moveDirection.y = 0;
       break;
-    case "KeyS":
+    case "KeyW":
       player.moveDirection.y = 0;
       break;
     case "KeyD":
@@ -110,7 +111,7 @@ const playerSetup = async () => {
 
   player.moveDirection = { x: 0, y: 0 };
   player.move = () => {
-    let moveStep = 0.1;
+    let moveStep = 0.2;
     let rotateStep = 0.01;
 
     if (player.moveDirection.x > 0) {
@@ -245,10 +246,54 @@ const powerballHandler = () => {
   });
 };
 
+const generateStar = async () => {
+  const star = await importModel("src/assets/star2.glb");
+  console.log(star);
+  star.rotation.x = Math.PI / 2;
+
+  star.move = () => {
+    star.position.z += 0.5;
+  };
+  // star. = "star";
+
+  scene.add(star);
+  return star;
+};
+
+const gameObjectsSetup = async () => {
+  for (let i = 0; i < getRandomInt(20, 25); i++) {
+    const star = await generateStar();
+    console.log(star);
+    star.position.set(
+      getRandomInt(-20, 20),
+      getRandomInt(-10, 10),
+      getRandomInt(-1000, -50)
+    );
+    gameObjects.push(star);
+  }
+};
+
+const gameObjectsHandler = () => {
+  // check for object collision and reposition
+
+  // move object
+  gameObjects.forEach((gameObject) => {
+    if (player.position.z - gameObject.position.z < -10) {
+      gameObject.position.set(
+        getRandomInt(-20, 20),
+        getRandomInt(-10, 10),
+        getRandomInt(-1000, -50)
+      );
+    }
+    gameObject.move();
+  });
+};
+
 const initWorld = async () => {
   await playerSetup();
   document.addEventListener("keydown", onKeyDown);
   document.addEventListener("keyup", onKeyUp);
+  await gameObjectsSetup();
   galaxySetup();
 };
 
@@ -258,6 +303,7 @@ const animate = async () => {
   galaxy.update();
   player.move();
   powerballHandler();
+  gameObjectsHandler();
 
   camera.position.x = player.position.x;
   camera.position.y = player.position.y;
