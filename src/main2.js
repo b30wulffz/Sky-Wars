@@ -291,7 +291,7 @@ function detectCollisionGroupObject(group, object) {
 
 const generatePowerball = async (scene) => {
   let [item] = await Promise.all([
-    loader.loadAsync("src/assets/powerball3.glb"),
+    loader.loadAsync("src/assets/powerball.glb"),
   ]);
   // console.log(item.scene.children);
   // item = item.scene.children[3];

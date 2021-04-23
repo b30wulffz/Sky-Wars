@@ -52,7 +52,7 @@ const importModel = async (path) => {
   return item.scene;
 };
 
-const onKeyDown = (event) => {
+const onKeyDown = async (event) => {
   let keyCode = event.code;
 
   switch (keyCode) {
@@ -69,10 +69,11 @@ const onKeyDown = (event) => {
       player.moveDirection.x = -1;
       break;
     case "ShiftRight":
-      generatePowerball(scene);
+      const powerball = await generatePowerball();
+      player.powerballs.push(powerball);
       break;
   }
-  console.log("down", keyCode);
+  // console.log("down", keyCode);
 };
 
 const onKeyUp = (event) => {
@@ -91,7 +92,7 @@ const onKeyUp = (event) => {
       player.moveDirection.x = 0;
       break;
   }
-  console.log("up", keyCode);
+  // console.log("up", keyCode);
 };
 
 const playerSetup = async () => {
@@ -111,7 +112,7 @@ const playerSetup = async () => {
   player.move = () => {
     let moveStep = 0.1;
     let rotateStep = 0.01;
-    console.log(player.moveDirection);
+
     if (player.moveDirection.x > 0) {
       player.position.x += moveStep;
       player.rotation.y += rotateStep;
@@ -154,6 +155,8 @@ const playerSetup = async () => {
       }
     }
   };
+
+  player.powerballs = [];
 
   scene.add(player);
   controls.target = player.position;
@@ -208,6 +211,40 @@ const galaxySetup = () => {
   };
 };
 
+const generatePowerball = async () => {
+  const powerball = await importModel("src/assets/powerball.glb");
+  console.log(powerball);
+  powerball.scale.set(0.5, 0.5, 0.5);
+  powerball.position.set(
+    player.position.x,
+    player.position.y - 0.5,
+    player.position.z - 1.5
+  );
+  powerball.move = () => {
+    powerball.position.z -= 0.5;
+  };
+
+  scene.add(powerball);
+  return powerball;
+};
+
+const powerballHandler = () => {
+  console.log(player.powerballs);
+  player.powerballs = player.powerballs.filter((ball) => {
+    // check for collision
+
+    // check for out of bound
+    if (player.position.z - ball.position.z > 100) {
+      scene.remove(ball);
+      return false;
+    }
+    return true;
+  });
+  player.powerballs.forEach((ball) => {
+    ball.move();
+  });
+};
+
 const initWorld = async () => {
   await playerSetup();
   document.addEventListener("keydown", onKeyDown);
@@ -220,6 +257,7 @@ const animate = async () => {
 
   galaxy.update();
   player.move();
+  powerballHandler();
 
   camera.position.x = player.position.x;
   camera.position.y = player.position.y;
