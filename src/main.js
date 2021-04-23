@@ -1,9 +1,9 @@
-// import * as THREE from "https://unpkg.com/three@0.127.0/build/three.module.js";
+import * as THREE from "https://unpkg.com/three@0.127.0/build/three.module.js";
 import { OrbitControls } from "https://threejsfundamentals.org/threejs/resources/threejs/r125/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "https://threejsfundamentals.org/threejs/resources/threejs/r125/examples/jsm/loaders/GLTFLoader.js";
 import { DRACOLoader } from "https://threejsfundamentals.org/threejs/resources/threejs/r125/examples/jsm/loaders/DRACOLoader.js";
 // import * as THREE from "https://cdnjs.cloudflare.com/ajax/libs/three.js/r127/three.js";
-import * as THREE from "https://threejsfundamentals.org/threejs/resources/threejs/r127/build/three.module.js";
+// import * as THREE from "https://threejsfundamentals.org/threejs/resources/threejs/r127/build/three.module.js";
 
 import { getRandomInt } from "./utils.js";
 
@@ -14,7 +14,6 @@ let loader;
 let player;
 let controls;
 let galaxy;
-let galaxyGeometry;
 
 const init = () => {
   scene = new THREE.Scene();
@@ -54,39 +53,45 @@ const importModel = async (path) => {
 };
 
 const onKeyDown = (event) => {
-  let xSpeed = 0.5;
-  let ySpeed = 0.5;
   let keyCode = event.code;
 
   switch (keyCode) {
     case "KeyW":
-      if (!player.isMoveY) {
-        player.newPosition.y += ySpeed;
-        player.isMoveY = true;
-      }
+      player.moveDirection.y = 1;
       break;
     case "KeyS":
-      if (!player.isMoveY) {
-        player.newPosition.y -= ySpeed;
-        player.isMoveY = true;
-      }
+      player.moveDirection.y = -1;
       break;
     case "KeyD":
-      if (!player.isMoveX) {
-        player.newPosition.x += xSpeed;
-        player.isMoveX = true;
-      }
+      player.moveDirection.x = 1;
       break;
     case "KeyA":
-      if (!player.isMoveX) {
-        player.newPosition.x -= xSpeed;
-        player.isMoveX = true;
-      }
+      player.moveDirection.x = -1;
       break;
     case "ShiftRight":
       generatePowerball(scene);
       break;
   }
+  console.log("down", keyCode);
+};
+
+const onKeyUp = (event) => {
+  let keyCode = event.code;
+  switch (keyCode) {
+    case "KeyW":
+      player.moveDirection.y = 0;
+      break;
+    case "KeyS":
+      player.moveDirection.y = 0;
+      break;
+    case "KeyD":
+      player.moveDirection.x = 0;
+      break;
+    case "KeyA":
+      player.moveDirection.x = 0;
+      break;
+  }
+  console.log("up", keyCode);
 };
 
 const playerSetup = async () => {
@@ -102,61 +107,50 @@ const playerSetup = async () => {
     player.rotation.z
   );
 
-  player.newPosition = new THREE.Vector3(
-    player.position.x,
-    player.position.y,
-    player.position.z
-  );
-
-  player.isMoveX = false;
-  player.isMoveY = false;
-
+  player.moveDirection = { x: 0, y: 0 };
   player.move = () => {
-    if (!player.isMoveX) {
-      let step = 0.02;
-      if (Math.abs(player.rotation.y - player.initialRotation.y) > step) {
+    let moveStep = 0.1;
+    let rotateStep = 0.01;
+    console.log(player.moveDirection);
+    if (player.moveDirection.x > 0) {
+      player.position.x += moveStep;
+      player.rotation.y += rotateStep;
+    } else if (player.moveDirection.x < 0) {
+      player.position.x -= moveStep;
+      player.rotation.y -= rotateStep;
+    } else {
+      if (Math.abs(player.rotation.y - player.initialRotation.y) > rotateStep) {
         if (player.rotation.y < player.initialRotation.y) {
-          player.rotation.y += step;
+          player.rotation.y += rotateStep;
         } else {
-          player.rotation.y -= step;
+          player.rotation.y -= rotateStep;
         }
+      }
+      if (player.rotation.y > 2 * Math.PI) {
+        player.rotation.y -= 2 * Math.PI;
+      } else if (player.rotation.y < -2 * Math.PI) {
+        player.rotation.y += 2 * Math.PI;
       }
     }
 
-    if (!player.isMoveY) {
-      let step = 0.02;
-      if (Math.abs(player.rotation.x - player.initialRotation.x) > step) {
+    if (player.moveDirection.y > 0) {
+      player.position.y += moveStep;
+      player.rotation.x += rotateStep;
+    } else if (player.moveDirection.y < 0) {
+      player.position.y -= moveStep;
+      player.rotation.x -= rotateStep;
+    } else {
+      if (Math.abs(player.rotation.x - player.initialRotation.x) > rotateStep) {
         if (player.rotation.x < player.initialRotation.x) {
-          player.rotation.x += step;
+          player.rotation.x += rotateStep;
         } else {
-          player.rotation.x -= step;
+          player.rotation.x -= rotateStep;
         }
       }
-    }
-
-    if (player.isMoveX || player.isMoveY) {
-      let step = 0.1;
-      if (Math.abs(player.position.x - player.newPosition.x) < step) {
-        player.isMoveX = false;
-      } else {
-        if (player.position.x < player.newPosition.x) {
-          player.position.x += step;
-          player.rotation.y += 0.02;
-        } else if (player.position.x > player.newPosition.x) {
-          player.position.x -= step;
-          player.rotation.y -= 0.02;
-        }
-      }
-      if (Math.abs(player.position.y - player.newPosition.y) < step) {
-        player.isMoveY = false;
-      } else {
-        if (player.position.y < player.newPosition.y) {
-          player.position.y += step;
-          player.rotation.x += 0.02;
-        } else if (player.position.y > player.newPosition.y) {
-          player.position.y -= step;
-          player.rotation.x -= 0.02;
-        }
+      if (player.rotation.x > 2 * Math.PI) {
+        player.rotation.x -= 2 * Math.PI;
+      } else if (player.rotation.x < -2 * Math.PI) {
+        player.rotation.x += 2 * Math.PI;
       }
     }
   };
@@ -166,8 +160,6 @@ const playerSetup = async () => {
 };
 
 const galaxySetup = () => {
-  //   let galaxyGeometry = new THREE.VertexGeometry();
-
   let vertices = [];
   for (let num = 0; num < 1000; num++) {
     const pointLight = new THREE.Vector3(
@@ -219,6 +211,7 @@ const galaxySetup = () => {
 const initWorld = async () => {
   await playerSetup();
   document.addEventListener("keydown", onKeyDown);
+  document.addEventListener("keyup", onKeyUp);
   galaxySetup();
 };
 
