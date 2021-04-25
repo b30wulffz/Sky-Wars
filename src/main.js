@@ -5,7 +5,7 @@ import { DRACOLoader } from "https://threejsfundamentals.org/threejs/resources/t
 // import * as THREE from "https://cdnjs.cloudflare.com/ajax/libs/three.js/r127/three.js";
 // import * as THREE from "https://threejsfundamentals.org/threejs/resources/threejs/r127/build/three.module.js";
 
-import { getRandomInt } from "./utils.js";
+import { getRandomInt, getRandomArbitrary } from "./utils.js";
 
 let scene;
 let camera;
@@ -171,6 +171,8 @@ const playerSetup = async () => {
     health: 100,
     score: 0,
     stars: 0,
+    asteroid: 0,
+    enemy: 0,
   };
 };
 
@@ -244,7 +246,20 @@ const powerballHandler = () => {
   // console.log(player.powerballs);
   player.powerballs = player.powerballs.filter((ball) => {
     // check for collision
-
+    for (let i = 0; i < gameObjects.length; i++) {
+      const gameObject = gameObjects[i];
+      if (gameObject.objectType == "asteroid") {
+        if (detectCollisionGroup(ball, gameObject, false)) {
+          gameObject.destroy = true;
+          scene.remove(ball);
+          if (gameStart) {
+            player.info.score += 10;
+            player.info.asteroid += 1;
+          }
+          return false;
+        }
+      }
+    }
     // check for out of bound
     if (player.position.z - ball.position.z > 100) {
       scene.remove(ball);
@@ -274,10 +289,41 @@ const generateAsteroid = async () => {
   const asteroid = await importModel("src/assets/asteroid.glb");
   asteroid.rotation.x = Math.PI / 2;
 
+  asteroid.destroy = false;
+
+  asteroid.destroyMovement = {
+    x:
+      getRandomArbitrary(0, 1) < 0.5
+        ? -getRandomArbitrary(0.2, 0.3)
+        : getRandomArbitrary(0.2, 0.3),
+    y:
+      getRandomArbitrary(0, 1) < 0.5
+        ? -getRandomArbitrary(0.2, 0.3)
+        : getRandomArbitrary(0.2, 0.3),
+  };
   asteroid.move = () => {
-    asteroid.position.z += 0.5;
     asteroid.rotation.x += 0.1;
     asteroid.rotation.y += 0.1;
+    if (!asteroid.destroy) {
+      asteroid.position.z += 0.5;
+    } else {
+      asteroid.position.z += 0.1;
+      asteroid.position.x += asteroid.destroyMovement.x;
+      asteroid.position.y += asteroid.destroyMovement.y;
+      if (
+        asteroid.position.x > 40 ||
+        asteroid.position.x < -40 ||
+        asteroid.position.y > 40 ||
+        asteroid.position.y < -40
+      ) {
+        asteroid.position.set(
+          getRandomInt(-20, 20),
+          getRandomInt(-10, 10),
+          getRandomInt(-1000, -50)
+        );
+        asteroid.destroy = false;
+      }
+    }
   };
   asteroid.objectType = "asteroid";
 
@@ -324,27 +370,26 @@ const detectCollision = (object1, object2) => {
   return box1.intersectsBox(box2);
 };
 
-function detectCollisionGroup(group1, group2) {
-  for (let i = 0; i < group1.children.length; i++) {
-    const child1 = group1.children[i];
-    if (child1.type === "Mesh") {
-      for (let j = 0; j < group2.children.length; j++) {
-        const child2 = group2.children[j];
-        if (child2.type === "Mesh") {
-          if (detectCollision(child1, child2)) {
-            return true;
-          }
-        }
+function detectCollisionGroup(group1, group2, isPlane) {
+  const meshChildren1 = group1.children.filter((obj) => obj.type === "Mesh");
+  const meshChildren2 = group2.children.filter((obj) => obj.type === "Mesh");
+  for (let i = 0; i < meshChildren1.length; i++) {
+    for (let j = 0; j < meshChildren2.length; j++) {
+      if (detectCollision(meshChildren1[i], meshChildren2[j])) {
+        return true;
       }
     }
-    return false;
+    if (isPlane) {
+      return false;
+    }
   }
+  return false;
 }
 const gameObjectsHandler = () => {
   // check for object collision and reposition
   // move object
   gameObjects.forEach((gameObject) => {
-    if (detectCollisionGroup(player, gameObject)) {
+    if (detectCollisionGroup(player, gameObject, true)) {
       gameObject.position.set(
         getRandomInt(-20, 20),
         getRandomInt(-10, 10),
@@ -354,6 +399,9 @@ const gameObjectsHandler = () => {
         switch (gameObject.objectType) {
           case "asteroid":
             player.info.health -= getRandomInt(10, 30);
+
+            player.rotation.x += getRandomArbitrary(0, 1) < 0.5 ? 0.05 : -0.05;
+            player.rotation.y += getRandomArbitrary(0, 1) < 0.5 ? 0.05 : -0.05;
             break;
           case "star":
             player.info.score += 20;
@@ -404,7 +452,6 @@ const animate = async () => {
     }
     console.log(player.info);
   } else {
-    console.log(player.position);
     if (player.position.y > -120) {
       player.position.y -= 0.5;
       player.rotation.y += 0.1;
