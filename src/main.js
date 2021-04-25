@@ -11,10 +11,12 @@ let scene;
 let camera;
 let renderer;
 let loader;
+let headLight;
 let player;
 let controls;
 let galaxy;
 let gameObjects = [];
+let gameStart = false;
 
 const init = () => {
   scene = new THREE.Scene();
@@ -34,9 +36,13 @@ const init = () => {
   controls.update();
 
   const color = 0xffffff;
-  const intensity = 1;
+  const intensity = 1.5;
   const light = new THREE.AmbientLight(color, intensity);
   scene.add(light);
+
+  headLight = new THREE.PointLight(0xffffff, 1, 100);
+  headLight.position.set(0, 0, -1);
+  scene.add(headLight);
 
   const dracoLoader = new DRACOLoader();
   dracoLoader.setDecoderPath("src/libs/draco/gltf/");
@@ -161,6 +167,11 @@ const playerSetup = async () => {
 
   scene.add(player);
   controls.target = player.position;
+  player.info = {
+    health: 100,
+    score: 0,
+    stars: 0,
+  };
 };
 
 const galaxySetup = () => {
@@ -214,7 +225,7 @@ const galaxySetup = () => {
 
 const generatePowerball = async () => {
   const powerball = await importModel("src/assets/powerball.glb");
-  console.log(powerball);
+  // console.log(powerball);
   powerball.scale.set(0.5, 0.5, 0.5);
   powerball.position.set(
     player.position.x,
@@ -253,13 +264,29 @@ const generateStar = async () => {
   star.move = () => {
     star.position.z += 0.5;
   };
-  // star. = "star";
+  star.objectType = "star";
 
   scene.add(star);
   return star;
 };
 
+const generateAsteroid = async () => {
+  const asteroid = await importModel("src/assets/asteroid.glb");
+  asteroid.rotation.x = Math.PI / 2;
+
+  asteroid.move = () => {
+    asteroid.position.z += 0.5;
+    asteroid.rotation.x += 0.1;
+    asteroid.rotation.y += 0.1;
+  };
+  asteroid.objectType = "asteroid";
+
+  scene.add(asteroid);
+  return asteroid;
+};
+
 const gameObjectsSetup = async () => {
+  // adding stars
   for (let i = 0; i < getRandomInt(20, 25); i++) {
     const star = await generateStar();
     star.position.set(
@@ -268,6 +295,17 @@ const gameObjectsSetup = async () => {
       getRandomInt(-1000, -50)
     );
     gameObjects.push(star);
+  }
+  // adding asteroids
+
+  for (let i = 0; i < getRandomInt(20, 25); i++) {
+    const asteroid = await generateAsteroid();
+    asteroid.position.set(
+      getRandomInt(-20, 20),
+      getRandomInt(-10, 10),
+      getRandomInt(-1000, -50)
+    );
+    gameObjects.push(asteroid);
   }
 };
 
@@ -312,6 +350,17 @@ const gameObjectsHandler = () => {
         getRandomInt(-10, 10),
         getRandomInt(-1000, -50)
       );
+      if (gameStart) {
+        switch (gameObject.objectType) {
+          case "asteroid":
+            player.info.health -= getRandomInt(10, 30);
+            break;
+          case "star":
+            player.info.score += 20;
+            player.info.stars += 1;
+            break;
+        }
+      }
     } else if (player.position.z - gameObject.position.z < -10) {
       gameObject.position.set(
         getRandomInt(-20, 20),
@@ -329,19 +378,40 @@ const initWorld = async () => {
   document.addEventListener("keyup", onKeyUp);
   await gameObjectsSetup();
   galaxySetup();
+  console.log(gameObjects[0]);
+  setTimeout(() => {
+    gameStart = true;
+  }, 1000);
 };
 
 const animate = async () => {
   requestAnimationFrame(animate);
 
-  galaxy.update();
-  player.move();
-  powerballHandler();
-  gameObjectsHandler();
+  if (player.info.health > 0) {
+    galaxy.update();
+    player.move();
+    powerballHandler();
+    gameObjectsHandler();
 
-  camera.position.x = player.position.x;
-  camera.position.y = player.position.y;
+    camera.position.x = player.position.x;
+    camera.position.y = player.position.y;
 
+    headLight.position.x = player.position.x;
+    headLight.position.y = player.position.y;
+    headLight.position.z = player.position.z;
+    if (gameStart) {
+      player.info.score += 0.1;
+    }
+    console.log(player.info);
+  } else {
+    console.log(player.position);
+    if (player.position.y > -120) {
+      player.position.y -= 0.5;
+      player.rotation.y += 0.1;
+    } else {
+      scene.remove(player);
+    }
+  }
   renderer.render(scene, camera);
   controls.update();
 };
