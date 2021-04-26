@@ -124,11 +124,21 @@ const playerSetup = async () => {
     let rotateStep = 0.01;
 
     if (player.moveDirection.x > 0) {
-      player.position.x += moveStep;
-      player.rotation.y += rotateStep;
+      // adding movement limits
+      if (player.position.x < 20) {
+        player.position.x += moveStep;
+        // if (player.rotation.y < Math.PI / 6) {
+        player.rotation.y += rotateStep;
+        // }
+      }
     } else if (player.moveDirection.x < 0) {
-      player.position.x -= moveStep;
-      player.rotation.y -= rotateStep;
+      // adding movement limits
+      if (player.position.x > -20) {
+        player.position.x -= moveStep;
+        // if (player.rotation.y > -Math.PI / 6) {
+        player.rotation.y -= rotateStep;
+        // }
+      }
     } else {
       if (Math.abs(player.rotation.y - player.initialRotation.y) > rotateStep) {
         if (player.rotation.y < player.initialRotation.y) {
@@ -145,11 +155,21 @@ const playerSetup = async () => {
     }
 
     if (player.moveDirection.y > 0) {
-      player.position.y += moveStep;
-      player.rotation.x += rotateStep;
+      // adding movement limits
+      if (player.position.y < 10) {
+        player.position.y += moveStep;
+        if (player.rotation.x < Math.PI / 4) {
+          player.rotation.x += rotateStep;
+        }
+      }
     } else if (player.moveDirection.y < 0) {
-      player.position.y -= moveStep;
-      player.rotation.x -= rotateStep;
+      // adding movement limits
+      if (player.position.y > -10) {
+        player.position.y -= moveStep;
+        if (player.rotation.x > -Math.PI) {
+          player.rotation.x -= rotateStep;
+        }
+      }
     } else {
       if (Math.abs(player.rotation.x - player.initialRotation.x) > rotateStep) {
         if (player.rotation.x < player.initialRotation.x) {
@@ -494,7 +514,7 @@ const gameObjectsSetup = async () => {
     enemy.position.set(
       getRandomInt(-20, 20),
       getRandomInt(-10, 10),
-      getRandomInt(-1000, -50)
+      getRandomInt(-1000, -200)
     );
     gameObjects.push(enemy);
   }
@@ -579,7 +599,6 @@ const initWorld = async () => {
   document.addEventListener("keyup", onKeyUp);
   await gameObjectsSetup();
   galaxySetup();
-  console.log(gameObjects[0]);
   setTimeout(() => {
     gameStart = true;
   }, 1000);
