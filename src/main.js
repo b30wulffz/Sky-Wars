@@ -18,6 +18,7 @@ let galaxy;
 let gameObjects = [];
 let gameStart = false;
 let enemyPowerballs = [];
+let animationFrameId;
 
 const init = () => {
   scene = new THREE.Scene();
@@ -593,6 +594,35 @@ const gameObjectsHandler = () => {
   });
 };
 
+// const addText = () => {
+//   // let sprite = new THREE.TextSprite({
+//   //   text: "Hello World!",
+//   //   fontFamily: "Arial, Helvetica, sans-serif",
+//   //   fontSize: 12,
+//   //   color: "#ffbbff",
+//   // });
+//   // scene.add(sprite);
+//   // var spriteText = new THREE.SpriteText({ text: "Hello world!" });
+//   // scene.add(spriteText);
+//   var text2 = document.createElement("div");
+//   text2.className = "aClassName";
+//   text2.style.position = "absolute";
+//   //text2.style.zIndex = 1;    // if you still don't see the label, try uncommenting this
+//   text2.style.width = 100;
+//   text2.style.height = 100;
+//   text2.style.backgroundColor = "rgba(207, 214, 218, 0.2)";
+//   // text2.style = {
+//   //   position: "absolute",
+//   //   width: 100,
+//   //   height: 100,
+//   //   backgroundColor: "blue",
+//   // };
+//   text2.innerHTML = "hi there!";
+//   text2.style.top = 200 + "px";
+//   text2.style.left = 200 + "px";
+//   document.body.appendChild(text2);
+// };
+
 const initWorld = async () => {
   await playerSetup();
   document.addEventListener("keydown", onKeyDown);
@@ -604,8 +634,41 @@ const initWorld = async () => {
   }, 1000);
 };
 
+const hudHandler = () => {
+  document.getElementById("score").innerHTML = Math.round(player.info.score);
+  let health = Math.round(player.info.health);
+  if (health < 0) {
+    health = 0;
+  }
+  document.getElementById("health-bar").value = health;
+  document.getElementById("stars").innerHTML = Math.round(player.info.stars);
+  for (let i = 1; i <= 3; i++) {
+    const divId = `powerball-${i}`;
+    if (i <= 3 - player.powerballs.length) {
+      document.getElementById(divId).style.backgroundColor =
+        "rgb(22, 244, 208)";
+    } else {
+      document.getElementById(divId).style.backgroundColor =
+        "rgb(74, 128, 119)";
+    }
+  }
+};
+
+const gameOverHandler = () => {
+  document.getElementById("final-score").innerHTML = Math.round(
+    player.info.score
+  );
+  document.getElementById("final-stars").innerHTML = player.info.stars;
+  document.getElementById("final-asteroids").innerHTML = player.info.asteroid;
+  document.getElementById("final-enemies").innerHTML = player.info.enemy;
+  document.getElementById("game-over").style.display = "flex";
+  setTimeout(() => {
+    document.getElementById("game-over").style.opacity = 1;
+  }, 100);
+};
+
 const animate = async () => {
-  requestAnimationFrame(animate);
+  animationFrameId = requestAnimationFrame(animate);
 
   if (player.info.health > 0) {
     galaxy.update();
@@ -613,6 +676,7 @@ const animate = async () => {
     powerballHandler();
     enemyPowerballHandler();
     gameObjectsHandler();
+    hudHandler();
 
     camera.position.x = player.position.x;
     camera.position.y = player.position.y;
@@ -623,19 +687,26 @@ const animate = async () => {
     if (gameStart) {
       player.info.score += 0.1;
     }
+    // console.log(player.info);
   } else {
     // when collision thus fall
     if (player.position.y > -120) {
       player.position.y -= 0.5;
       player.rotation.y += 0.1;
+      setTimeout(() => gameOverHandler(), 1500);
     } else {
       scene.remove(player);
     }
   }
+
   renderer.render(scene, camera);
   controls.update();
 };
 
-init();
-await initWorld();
-animate();
+const start = async () => {
+  init();
+  await initWorld();
+  animate();
+};
+
+start();

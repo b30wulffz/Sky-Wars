@@ -10,8 +10,60 @@
         margin: 0;
       }
     </style>
+    <link rel="preconnect" href="https://fonts.gstatic.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles/main.css" />
   </head>
   <body>
+    <div class="hud-container container-left">
+      <div class="title">Health</div>
+      <progress id="health-bar" value="100" max="100"></progress>
+      <div class="powerball-container">
+        <div class="title">Powerballs:</div>
+        <div class="powerball" id="powerball-1"></div>
+        <div class="powerball" id="powerball-2"></div>
+        <div class="powerball" id="powerball-3"></div>
+      </div>
+    </div>
+    <div class="hud-container container-right">
+      <div class="hud-row">
+        <div class="hud-cell">Score:</div>
+        <div class="hud-cell" id="score">0</div>
+      </div>
+      <div class="hud-row">
+        <div class="hud-cell">Stars:</div>
+        <div class="hud-cell" id="stars">0</div>
+      </div>
+      <div class="hud-row"></div>
+    </div>
+    <div class="game-over-container" id="game-over">
+      <div class="game-over-title">Game Over</div>
+      <div class="game-over-summary">
+        <div class="hud-row">
+          <div class="hud-cell">Final Score:</div>
+          <div class="hud-cell" id="final-score">0</div>
+        </div>
+        <div class="hud-row">
+          <div class="hud-cell">Stars Collected:</div>
+          <div class="hud-cell" id="final-stars">0</div>
+        </div>
+        <div class="hud-row">
+          <div class="hud-cell">Asteroids Destroyed:</div>
+          <div class="hud-cell" id="final-asteroids">0</div>
+        </div>
+        <div class="hud-row">
+          <div class="hud-cell">Enemy Kills:</div>
+          <div class="hud-cell" id="final-enemies">0</div>
+        </div>
+      </div>
+    </div>
     <script src="src/main.js" type="module"></script>
     <!-- <script src="js/three.js"></script> -->
     <!-- <script type="module"></script> -->
