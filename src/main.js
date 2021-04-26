@@ -285,6 +285,47 @@ const powerballHandler = () => {
   });
 };
 
+const generateEnemyPowerball = async (enemyPosition) => {
+  const powerball = await importModel("src/assets/enemyPowerball.glb");
+  // console.log(powerball);
+  powerball.scale.set(0.5, 0.5, 0.5);
+  powerball.position.set(
+    enemyPosition.x,
+    enemyPosition.y - 0.5,
+    enemyPosition.z - 1.5
+  );
+  powerball.move = () => {
+    powerball.position.z += 1.5;
+  };
+
+  scene.add(powerball);
+  return powerball;
+};
+
+const enemyPowerballHandler = () => {
+  // console.log(player.powerballs);
+  enemyPowerballs = enemyPowerballs.filter((ball) => {
+    // check for collision with player
+    if (detectCollisionGroup(player, ball, true)) {
+      scene.remove(ball);
+      if (gameStart) {
+        player.info.health -= getRandomInt(40, 60);
+        shakePlayer();
+      }
+      return false;
+    }
+    // check for out of bound
+    if (player.position.z - ball.position.z < -10) {
+      scene.remove(ball);
+      return false;
+    }
+    return true;
+  });
+  enemyPowerballs.forEach((ball) => {
+    ball.move();
+  });
+};
+
 const generateStar = async () => {
   const star = await importModel("src/assets/star2.glb");
   star.rotation.x = Math.PI / 2;
@@ -367,7 +408,7 @@ const generateEnemy = async () => {
   };
 
   enemy.moveDirection = { x: 0.2, y: 0.2 };
-  enemy.move = () => {
+  enemy.move = async () => {
     if (!enemy.destroy) {
       //zig zag movement
       if (enemy.position.x > 20) {
@@ -385,6 +426,16 @@ const generateEnemy = async () => {
       enemy.position.x += enemy.moveDirection.x;
       enemy.position.y += enemy.moveDirection.y;
       enemy.position.z += 1;
+      // enemy spawns bullets
+      let dist = player.position.z - enemy.position.z;
+      if (dist > 30 && dist < 140) {
+        if (getRandomArbitrary(0, 1) < 0.04) {
+          if (enemyPowerballs.length < 3) {
+            const powerball = await generateEnemyPowerball(enemy.position);
+            enemyPowerballs.push(powerball);
+          }
+        }
+      }
     } else {
       // when bullet hits enemy
       enemy.position.z += 0.1;
@@ -479,10 +530,16 @@ function detectCollisionGroup(group1, group2, isPlane) {
   }
   return false;
 }
+
+const shakePlayer = () => {
+  player.rotation.x += getRandomArbitrary(0, 1) < 0.5 ? 0.05 : -0.05;
+  player.rotation.y += getRandomArbitrary(0, 1) < 0.5 ? 0.05 : -0.05;
+};
+
 const gameObjectsHandler = () => {
   // check for object collision and reposition
   // move object
-  gameObjects.forEach((gameObject) => {
+  gameObjects.forEach(async (gameObject) => {
     if (detectCollisionGroup(player, gameObject, true)) {
       gameObject.position.set(
         getRandomInt(-20, 20),
@@ -493,17 +550,12 @@ const gameObjectsHandler = () => {
         switch (gameObject.objectType) {
           case "asteroid":
             player.info.health -= getRandomInt(10, 30);
-
-            player.rotation.x += getRandomArbitrary(0, 1) < 0.5 ? 0.05 : -0.05;
-            player.rotation.y += getRandomArbitrary(0, 1) < 0.5 ? 0.05 : -0.05;
+            shakePlayer();
             break;
           case "enemy":
             player.info.health -= 110;
-
-            player.rotation.x += getRandomArbitrary(0, 1) < 0.5 ? 0.05 : -0.05;
-            player.rotation.y += getRandomArbitrary(0, 1) < 0.5 ? 0.05 : -0.05;
+            shakePlayer();
             break;
-
           case "star":
             player.info.score += 20;
             player.info.stars += 1;
@@ -517,7 +569,7 @@ const gameObjectsHandler = () => {
         getRandomInt(-1000, -50)
       );
     }
-    gameObject.move();
+    await gameObject.move();
   });
 };
 
@@ -540,6 +592,7 @@ const animate = async () => {
     galaxy.update();
     player.move();
     powerballHandler();
+    enemyPowerballHandler();
     gameObjectsHandler();
 
     camera.position.x = player.position.x;
@@ -551,7 +604,6 @@ const animate = async () => {
     if (gameStart) {
       player.info.score += 0.1;
     }
-    console.log(player.info);
   } else {
     // when collision thus fall
     if (player.position.y > -120) {
