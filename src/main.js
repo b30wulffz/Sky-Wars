@@ -17,6 +17,7 @@ let controls;
 let galaxy;
 let gameObjects = [];
 let gameStart = false;
+let enemyPowerballs = [];
 
 const init = () => {
   scene = new THREE.Scene();
@@ -76,8 +77,10 @@ const onKeyDown = async (event) => {
       player.moveDirection.x = -1;
       break;
     case "ShiftRight":
-      const powerball = await generatePowerball();
-      player.powerballs.push(powerball);
+      if (player.powerballs.length < 3) {
+        const powerball = await generatePowerball();
+        player.powerballs.push(powerball);
+      }
       break;
   }
   // console.log("down", keyCode);
@@ -258,6 +261,16 @@ const powerballHandler = () => {
           }
           return false;
         }
+      } else if (gameObject.objectType == "enemy") {
+        if (detectCollisionGroup(ball, gameObject, false)) {
+          gameObject.destroy = true;
+          scene.remove(ball);
+          if (gameStart) {
+            player.info.score += 15;
+            player.info.enemy += 1;
+          }
+          return false;
+        }
       }
     }
     // check for out of bound
@@ -331,6 +344,76 @@ const generateAsteroid = async () => {
   return asteroid;
 };
 
+const generateEnemy = async () => {
+  let enemy = await importModel("src/assets/dorand2.glb");
+  enemy = enemy.children[2];
+  enemy.scale.set(0.5, 0.5, 1);
+  enemy.rotation.set(enemy.rotation.x, 0, Math.PI / 2);
+  enemy.initialRotationX = enemy.rotation.x;
+
+  enemy.destroy = false;
+
+  enemy.destroyMovement = {
+    x:
+      getRandomArbitrary(0, 1) < 0.5
+        ? -getRandomArbitrary(0.2, 0.4)
+        : getRandomArbitrary(0.2, 0.4),
+    y: -getRandomArbitrary(0.2, 0.3),
+    // getRandomArbitrary(0, 1) < 0.5
+    //   ? -getRandomArbitrary(0.2, 0.3)
+    //   : getRandomArbitrary(0.2, 0.3),
+    rotationX: getRandomArbitrary(0, 1) < 0.5 ? 0.03 : -0.03,
+    rotationY: getRandomArbitrary(0, 1) < 0.5 ? 0.1 : -0.1,
+  };
+
+  enemy.moveDirection = { x: 0.2, y: 0.2 };
+  enemy.move = () => {
+    if (!enemy.destroy) {
+      //zig zag movement
+      if (enemy.position.x > 20) {
+        enemy.moveDirection.x = -enemy.moveDirection.x;
+      } else if (enemy.position.x < -20) {
+        enemy.moveDirection.x = -enemy.moveDirection.x;
+      }
+
+      if (enemy.position.y > 10) {
+        enemy.moveDirection.y = -enemy.moveDirection.y;
+      } else if (enemy.position.y < -10) {
+        enemy.moveDirection.y = -enemy.moveDirection.y;
+      }
+
+      enemy.position.x += enemy.moveDirection.x;
+      enemy.position.y += enemy.moveDirection.y;
+      enemy.position.z += 1;
+    } else {
+      // when bullet hits enemy
+      enemy.position.z += 0.1;
+      enemy.position.x += enemy.destroyMovement.x;
+      enemy.position.y += enemy.destroyMovement.y;
+      enemy.rotation.x += enemy.destroyMovement.rotationX;
+      enemy.rotation.y += enemy.destroyMovement.rotationY;
+      if (
+        enemy.position.x > 40 ||
+        enemy.position.x < -40 ||
+        enemy.position.y > 40 ||
+        enemy.position.y < -40
+      ) {
+        enemy.position.set(
+          getRandomInt(-20, 20),
+          getRandomInt(-10, 10),
+          getRandomInt(-1000, -50)
+        );
+        enemy.rotation.set(enemy.initialRotationX, 0, Math.PI / 2);
+        enemy.destroy = false;
+      }
+    }
+  };
+  enemy.objectType = "enemy";
+
+  scene.add(enemy);
+  return enemy;
+};
+
 const gameObjectsSetup = async () => {
   // adding stars
   for (let i = 0; i < getRandomInt(20, 25); i++) {
@@ -342,8 +425,8 @@ const gameObjectsSetup = async () => {
     );
     gameObjects.push(star);
   }
-  // adding asteroids
 
+  // adding asteroids
   for (let i = 0; i < getRandomInt(20, 25); i++) {
     const asteroid = await generateAsteroid();
     asteroid.position.set(
@@ -352,6 +435,17 @@ const gameObjectsSetup = async () => {
       getRandomInt(-1000, -50)
     );
     gameObjects.push(asteroid);
+  }
+
+  // adding enemy
+  for (let i = 0; i < getRandomInt(3, 4); i++) {
+    const enemy = await generateEnemy();
+    enemy.position.set(
+      getRandomInt(-20, 20),
+      getRandomInt(-10, 10),
+      getRandomInt(-1000, -50)
+    );
+    gameObjects.push(enemy);
   }
 };
 
@@ -403,6 +497,13 @@ const gameObjectsHandler = () => {
             player.rotation.x += getRandomArbitrary(0, 1) < 0.5 ? 0.05 : -0.05;
             player.rotation.y += getRandomArbitrary(0, 1) < 0.5 ? 0.05 : -0.05;
             break;
+          case "enemy":
+            player.info.health -= 110;
+
+            player.rotation.x += getRandomArbitrary(0, 1) < 0.5 ? 0.05 : -0.05;
+            player.rotation.y += getRandomArbitrary(0, 1) < 0.5 ? 0.05 : -0.05;
+            break;
+
           case "star":
             player.info.score += 20;
             player.info.stars += 1;
@@ -452,6 +553,7 @@ const animate = async () => {
     }
     console.log(player.info);
   } else {
+    // when collision thus fall
     if (player.position.y > -120) {
       player.position.y -= 0.5;
       player.rotation.y += 0.1;
