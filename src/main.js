@@ -667,6 +667,13 @@ const gameOverHandler = () => {
   }, 100);
 };
 
+window.addEventListener("resize", () => {
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  const canvas = renderer.domElement;
+  camera.aspect = canvas.clientWidth / canvas.clientHeight;
+  camera.updateProjectionMatrix();
+});
+
 const animate = async () => {
   animationFrameId = requestAnimationFrame(animate);
 
@@ -687,7 +694,6 @@ const animate = async () => {
     if (gameStart) {
       player.info.score += 0.1;
     }
-    // console.log(player.info);
   } else {
     // when collision thus fall
     if (player.position.y > -120) {
