@@ -76,7 +76,7 @@ const onKeyDown = async (event) => {
     case "KeyA":
       player.moveDirection.x = -1;
       break;
-    case "ShiftRight":
+    case "Space":
       if (player.powerballs.length < 3) {
         const powerball = await generatePowerball();
         player.powerballs.push(powerball);
