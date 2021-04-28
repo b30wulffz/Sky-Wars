@@ -2,8 +2,6 @@ import * as THREE from "https://unpkg.com/three@0.127.0/build/three.module.js";
 import { OrbitControls } from "https://threejsfundamentals.org/threejs/resources/threejs/r125/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "https://threejsfundamentals.org/threejs/resources/threejs/r125/examples/jsm/loaders/GLTFLoader.js";
 import { DRACOLoader } from "https://threejsfundamentals.org/threejs/resources/threejs/r125/examples/jsm/loaders/DRACOLoader.js";
-// import * as THREE from "https://cdnjs.cloudflare.com/ajax/libs/three.js/r127/three.js";
-// import * as THREE from "https://threejsfundamentals.org/threejs/resources/threejs/r127/build/three.module.js";
 
 import { getRandomInt, getRandomArbitrary } from "./utils.js";
 
@@ -18,7 +16,6 @@ let galaxy;
 let gameObjects = [];
 let gameStart = false;
 let enemyPowerballs = [];
-let animationFrameId;
 
 const init = () => {
   scene = new THREE.Scene();
@@ -107,7 +104,7 @@ const onKeyUp = (event) => {
 };
 
 const playerSetup = async () => {
-  player = await importModel("src/assets/dorand2.glb");
+  player = await importModel("src/assets/spacePlane.glb");
   player = player.children[2];
   player.scale.set(0.5, 0.5, 1);
   //   player.position.set(3.7, -1, 0);
@@ -348,7 +345,7 @@ const enemyPowerballHandler = () => {
 };
 
 const generateStar = async () => {
-  const star = await importModel("src/assets/star2.glb");
+  const star = await importModel("src/assets/star.glb");
   star.rotation.x = Math.PI / 2;
 
   star.move = () => {
@@ -407,7 +404,7 @@ const generateAsteroid = async () => {
 };
 
 const generateEnemy = async () => {
-  let enemy = await importModel("src/assets/dorand2.glb");
+  let enemy = await importModel("src/assets/spacePlane.glb");
   enemy = enemy.children[2];
   enemy.scale.set(0.5, 0.5, 1);
   enemy.rotation.set(enemy.rotation.x, 0, Math.PI / 2);
@@ -421,9 +418,6 @@ const generateEnemy = async () => {
         ? -getRandomArbitrary(0.2, 0.4)
         : getRandomArbitrary(0.2, 0.4),
     y: -getRandomArbitrary(0.2, 0.3),
-    // getRandomArbitrary(0, 1) < 0.5
-    //   ? -getRandomArbitrary(0.2, 0.3)
-    //   : getRandomArbitrary(0.2, 0.3),
     rotationX: getRandomArbitrary(0, 1) < 0.5 ? 0.03 : -0.03,
     rotationY: getRandomArbitrary(0, 1) < 0.5 ? 0.1 : -0.1,
   };
@@ -594,35 +588,6 @@ const gameObjectsHandler = () => {
   });
 };
 
-// const addText = () => {
-//   // let sprite = new THREE.TextSprite({
-//   //   text: "Hello World!",
-//   //   fontFamily: "Arial, Helvetica, sans-serif",
-//   //   fontSize: 12,
-//   //   color: "#ffbbff",
-//   // });
-//   // scene.add(sprite);
-//   // var spriteText = new THREE.SpriteText({ text: "Hello world!" });
-//   // scene.add(spriteText);
-//   var text2 = document.createElement("div");
-//   text2.className = "aClassName";
-//   text2.style.position = "absolute";
-//   //text2.style.zIndex = 1;    // if you still don't see the label, try uncommenting this
-//   text2.style.width = 100;
-//   text2.style.height = 100;
-//   text2.style.backgroundColor = "rgba(207, 214, 218, 0.2)";
-//   // text2.style = {
-//   //   position: "absolute",
-//   //   width: 100,
-//   //   height: 100,
-//   //   backgroundColor: "blue",
-//   // };
-//   text2.innerHTML = "hi there!";
-//   text2.style.top = 200 + "px";
-//   text2.style.left = 200 + "px";
-//   document.body.appendChild(text2);
-// };
-
 const initWorld = async () => {
   await playerSetup();
   document.addEventListener("keydown", onKeyDown);
@@ -675,7 +640,7 @@ window.addEventListener("resize", () => {
 });
 
 const animate = async () => {
-  animationFrameId = requestAnimationFrame(animate);
+  requestAnimationFrame(animate);
 
   if (player.info.health > 0) {
     galaxy.update();
