@@ -1,14 +1,24 @@
-# Computer Graphics - Assignment Two - Sky Wars
+# Sky Wars
+
+<p align="center" width="100%">
+    <img src="./readme_assets/logo.png" alt="logo"> 
+</p>
 
 Sky Wars is an endless runner game developed on Three JS. The aim of this game is to collect stars, as many as possible. But wait, its not easy as it sounds! Across the galaxy you will face asteroids in your path which you need to avoid in order to survive. Moreover, there are enemy planes constantly shooting deadly powerballs at you. The challenge is to last longer than anyone else. Are you ready to take up this challenge?
 
-Trailer Video: [Click Here](https://drive.google.com/file/d/1i09W-AO0RlPvrQ8WUuY1w7Lm1fWj6lxe/view?usp=sharing)
+Trailer Video: [Click Here](https://www.youtube.com/watch?v=YGP-WKn8ryY)<br />
+Play Game: [Click Here](https://b30wulffz.github.io/Sky-Wars/)<br/>
+Note: Game requires good hardware specifications in order to run smoothly. Hence it might lag in case of low specifications.
 
 ## Instructions
 
 - Open project folder in VS Code.
 - Now run the index.html through VS Code Live Server.
 - Our game will be launched.
+
+<p align="center" width="100%">
+    <img src="./readme_assets/demo.gif" alt="demo"> 
+</p>
 
 ## Gameplay
 
@@ -23,22 +33,29 @@ Trailer Video: [Click Here](https://drive.google.com/file/d/1i09W-AO0RlPvrQ8WUuY
 - The game will end once the plane's health reduces to zero, and thus, it will crash.
 - In order to restart the game, webpage should be reloaded.
 
-### Keys:
+## Keys
 
-- `W`: To move the space plane to the top
+- `W`: To move the space plane to the bottom
 - `A`: To move the space plane to the left
-- `S`: To move the space plane to the bottom
+- `S`: To move the space plane to the top
 - `D`: To move the space plane to the right
 - `SPACE`: To shoot powerballs
 
-## Dependencies:
+## Dependencies
 
 - THREE.JS
 - Live Server
 
+## Models
+
+- Space plane: Dowloaded from [here](https://free3d.com/3d-model/frenxh-wwi-plane-dorand-ar1-61746.html)
+- Star: Built from scratch using blender
+- Rock: Built from scratch using blender
+- Powerball: Built from scratch using blender
+
 # Machine Specifications
 
-Details of the machine on which the application was tested:
+Details of the machine on which this game was tested:
 
 - Operating System: Elementary OS 5.1 (Hera)
 - Terminal: Bash
